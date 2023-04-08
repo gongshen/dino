@@ -498,7 +498,7 @@ function install_admin() {
   wget -O xray_admin.service https://raw.githubusercontent.com/gongshen/dino/main/resource/xray_admin.service && mv -f xray_admin.service ${xray_admin_service_dir}
   systemctl daemon-reload
   systemctl enable xray_admin
-  systemctl restart xray_amdin
+  systemctl restart xray_admin
   judge "xray_admin 启动"
 }
 
