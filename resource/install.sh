@@ -462,7 +462,7 @@ function install_xray1() {
   basic_information
 }
 
-function install_admin() {
+function install_mysql() {
   # 安装mysql8.0
   yum update -y
   rpm -Uvh https://dev.mysql.com/get/mysql80-community-release-el7-3.noarch.rpm
@@ -479,7 +479,9 @@ function install_admin() {
 EOF
 
   echo "Password updated successfully!"
+}
 
+function install_admin() {
   cd /root
   # 安装xray-admin
   wget -O xray-admin.tar.gz https://github.com/gongshen/dino/releases/download/${dino_version}/xray-admin.tar.gz
@@ -521,6 +523,7 @@ menu() {
 #  echo -e "${Green}10.${Font} 替换tmp"
   echo -e "${Green}11.${Font} 安装stat"
   echo -e "${Green}12.${Font} 安装管理端程序"
+  echo -e "${Green}13.${Font} 安装mysql"
   echo -e "${Green}40.${Font} 退出"
   read -rp "请输入数字：" menu_num
   case $menu_num in
@@ -569,6 +572,9 @@ menu() {
     ;;
   12)
     install_admin
+    ;;
+  13)
+    install_mysql
     ;;
   40)
     exit 0
