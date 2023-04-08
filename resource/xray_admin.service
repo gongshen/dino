@@ -1,0 +1,12 @@
+[Unit]
+Description=xray_admin Service
+After=network.target nss-lookup.target
+
+[Service]
+User=root
+ExecStart=/usr/local/bin/xray-admin -c /usr/local/etc/xray-admin/config.yaml
+Restart=on-failure
+RestartPreventExitStatus=23
+
+[Install]
+WantedBy=multi-user.target

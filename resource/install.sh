@@ -23,6 +23,9 @@ ERROR="${Red}[ERROR]${Font}"
 dino_version="v1.0.0"
 xray_version="v1.4.2"
 stat_dir="/usr/local/bin/stat"
+xray_admin_dir="/usr/local/bin/xray-admin"
+xray_admin_conf_dir="/usr/local/etc/xray-admin"
+xray_admin_service_dir="/etc/systemd/system/xray_admin.service"
 stat_service_dir="/etc/systemd/system/stat.service"
 xray_conf_dir="/usr/local/etc/xray"
 website_dir="/www/xray_web/"
@@ -310,11 +313,13 @@ function modify_UUID() {
 #  modify_port
 #}
 #
-#function configure_xray2() {
-#  cd  ${xray_conf_dir} && rm -f config.json && wget -O config.json https://raw.githubusercontent.com/gongshen/xray/main/base/config2.json
-#  modify_UUID
-#  modify_port
-#}
+function configure_xray2() {
+  cd  ${xray_conf_dir} && rm -f config.json && wget -O config.json https://raw.githubusercontent.com/gongshen/dino/main/resource/xrayConfig.json
+  modify_UUID
+  modify_port
+  systemctl restart xray
+  judge "Xray 启动"
+}
 
 function xray_install() {
   print_ok "安装 Xray"
@@ -419,11 +424,12 @@ function bbr_boost_sh() {
 }
 
 function config_iptables() {
+  # 下载iptables文件
+  wget -O iptables https://raw.githubusercontent.com/gongshen/dino/main/resource/iptables && mv -f iptables ${iptables_conf_dir}
   read -rp "请输入ssh端口号(默认：22)：" SSHPORT
   [ -z "$SSHPORT" ] && SSHPORT="22"
   sed -i "s|__SSHPORT__|${SSHPORT}|" ${iptables_conf_dir}
 
-  # 下载iptables
   sed -i "s|__PORT__|${PORT}|" ${iptables_conf_dir}
 }
 
@@ -435,6 +441,8 @@ function install_stat() {
   sed -i "s|__REMOTE_IP__|${remoteIp}|" ${stat_service_dir}
   systemctl daemon-reload
   systemctl enable stat
+  systemctl restart stat
+  judge "Stat 启动"
 }
 
 function install_xray1() {
@@ -454,22 +462,54 @@ function install_xray1() {
   basic_information
 }
 
+function install_admin() {
+  # 安装mysql8.0
+  yum update -y
+  rpm -Uvh https://dev.mysql.com/get/mysql80-community-release-el7-3.noarch.rpm
+  rpm --import https://repo.mysql.com/RPM-GPG-KEY-mysql-2022
+  yum install mysql-server -y
+  # 获取MySQL初始化密码
+  MYSQL_INIT_PASSWORD=$(grep 'temporary password' /var/log/mysqld.log | awk '{print $NF}')
+  # 输入新密码
+  echo "Enter new password for MySQL user: "
+  read NEW_MYSQL_PASSWORD
+  # 更改MySQL用户密码
+  mysql --connect-expired-password -uroot -p"$MYSQL_INIT_PASSWORD" <<EOF
+  ALTER USER 'root'@'localhost' IDENTIFIED BY '$NEW_MYSQL_PASSWORD';
+EOF
+
+  echo "Password updated successfully!"
+
+  cd /root
+  # 安装xray-admin
+  wget -O xray-admin.tar.gz https://github.com/gongshen/dino/releases/download/${dino_version}/xray-admin.tar.gz
+  tar -xzvf ${stat_dir}/xray-admin.tar.gz
+  chmox +x xray-admin
+  mv -f xray-admin ${xray_admin_dir}
+  rm -rf xray-admin.tar.gz
+  # 下载管理端配置文件
+  cd  ${xray_admin_conf_dir} && rm -f config.yaml && wget -O config.yaml https://raw.githubusercontent.com/gongshen/dino/main/resource/xray_admin_config.yaml
+  # 下载管理员service文件
+  wget -O xray_admin.service https://raw.githubusercontent.com/gongshen/dino/main/resource/xray_admin.service && mv -f xray_admin.service ${xray_admin_service_dir}
+  systemctl daemon-reload
+  systemctl enable xray_admin
+  systemctl restart xray_amdin
+  judge "xray_admin 启动"
+}
+
 function install_xray2() {
   is_root
   system_check
   dependency_install
   basic_optimization
   xray_install
-#  configure_xray2
-  install_stat
-  systemctl restart stat
-  judge "Stat 启动"
 }
 menu() {
   echo -e "\t Xray 安装管理脚本 ${Red}${Font}"
   echo -e "—————————————— 安装向导 ——————————————"""
 #  echo -e "${Green}1.${Font}  安装 Xray (VLESS + TCP + TLS + Nginx)"
-  echo -e "${Green}2.${Font}  安装 Xray (VMESS + TCP[http伪装])"
+  echo -e "${Green}2.${Font}  安装 Xray"
+  echo -e "${Green}3.${Font}  配置 Xray (VMESS + TCP[http伪装])"
 #  echo -e "${Green}3.${Font} 变更 端口"
 #  echo -e "${Green}4.${Font} 查看 实时访问日志"
 #  echo -e "${Green}5.${Font} 查看 实时错误日志"
@@ -480,6 +520,7 @@ menu() {
 #  echo -e "${Green}9.${Font} 更新 Xray-core"
 #  echo -e "${Green}10.${Font} 替换tmp"
   echo -e "${Green}11.${Font} 安装stat"
+  echo -e "${Green}12.${Font} 安装管理端程序"
   echo -e "${Green}40.${Font} 退出"
   read -rp "请输入数字：" menu_num
   case $menu_num in
@@ -490,22 +531,25 @@ menu() {
     install_xray2
     ;;
   3)
-    modify_port
-    restart_all
+    configure_xray2
     ;;
-  4)
-    tail -f $xray_access_log
-    ;;
-  5)
-    tail -f $xray_error_log
-    ;;
-  6)
-    if [[ -f $xray_conf_dir/config.json ]]; then
-      basic_information
-    else
-      print_error "xray 配置文件不存在"
-    fi
-    ;;
+#  3)
+#    modify_port
+#    restart_all
+#    ;;
+#  4)
+#    tail -f $xray_access_log
+#    ;;
+#  5)
+#    tail -f $xray_error_log
+#    ;;
+#  6)
+#    if [[ -f $xray_conf_dir/config.json ]]; then
+#      basic_information
+#    else
+#      print_error "xray 配置文件不存在"
+#    fi
+#    ;;
   7)
     bbr_boost_sh
     ;;
@@ -522,6 +566,9 @@ menu() {
     ;;
   11)
     install_stat
+    ;;
+  12)
+    install_admin
     ;;
   40)
     exit 0
