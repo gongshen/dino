@@ -490,6 +490,9 @@ function install_admin() {
   mv -f xray-admin ${xray_admin_dir}
   rm -rf xray-admin.tar.gz
   # 下载管理端配置文件
+  if [ ! -d ${xray_admin_conf_dir} ]; then
+    mkdir -p ${xray_admin_conf_dir}
+  fi
   cd  ${xray_admin_conf_dir} && rm -f config.yaml && wget -O config.yaml https://raw.githubusercontent.com/gongshen/dino/main/resource/xray_admin_config.yaml
   # 下载管理员service文件
   wget -O xray_admin.service https://raw.githubusercontent.com/gongshen/dino/main/resource/xray_admin.service && mv -f xray_admin.service ${xray_admin_service_dir}
