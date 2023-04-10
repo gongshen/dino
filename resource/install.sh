@@ -486,7 +486,7 @@ function install_admin() {
   # 安装xray-admin
   wget -O xray-admin.tar.gz https://github.com/gongshen/dino/raw/main/resource/xray-admin.tar.gz
   tar -xzvf xray-admin.tar.gz
-  chmox +x xray-admin
+  chmod +x xray-admin
   mv -f xray-admin ${xray_admin_dir}
   rm -rf xray-admin.tar.gz
   # 下载管理端配置文件
