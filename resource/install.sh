@@ -502,6 +502,10 @@ function install_admin() {
   judge "xray_admin 启动"
 }
 
+function install_admin_db() {
+    
+}
+
 function install_xray2() {
   is_root
   system_check
@@ -527,6 +531,7 @@ menu() {
   echo -e "${Green}11.${Font} 安装stat"
   echo -e "${Green}12.${Font} 安装管理端程序"
   echo -e "${Green}13.${Font} 安装mysql"
+  echo -e "${Green}14.${Font} 初始化管理端数据库"
   echo -e "${Green}40.${Font} 退出"
   read -rp "请输入数字：" menu_num
   case $menu_num in
@@ -578,6 +583,9 @@ menu() {
     ;;
   13)
     install_mysql
+    ;;
+  13)
+    install_admin_db
     ;;
   40)
     exit 0
