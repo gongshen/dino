@@ -503,7 +503,21 @@ function install_admin() {
 }
 
 function install_admin_db() {
-    
+  read -rp "请输入数据库类型(默认：mysql)：" ADMIN_DB_TYPE
+  [ -z "$ADMIN_DB_TYPE" ] && ADMIN_DB_TYPE="mysql"
+  read -rp "请输入数据库地址(默认：127.0.0.1)：" ADMIN_DB_HOST
+  [ -z "$ADMIN_DB_HOST" ] && ADMIN_DB_HOST="127.0.0.1"
+  read -rp "请输入数据库端口(默认：3306)：" ADMIN_DB_PORT
+  [ -z "$ADMIN_DB_PORT" ] && ADMIN_DB_PORT= "3306"
+  read -rp "请输入数据库用户名(默认：root)：" ADMIN_DB_USERNAME
+  [ -z "$ADMIN_DB_USERNAME" ] && ADMIN_DB_USERNAME="root"
+  read -rp "请输入数据库密码(默认：123456)：" ADMIN_DB_PASSWORD
+  [ -z "$ADMIN_DB_PASSWORD" ] && ADMIN_DB_PASSWORD="123456"
+  read -rp "请输入数据库库名(默认：gva)：" ADMIN_DB_NAME
+  [ -z "$ADMIN_DB_NAME" ] && ADMIN_DB_NAME="gva"
+  headers='Content-Type: application/json'
+  data="{\"dbType\": \"$ADMIN_DB_TYPE\",\"host\": \"$ADMIN_DB_HOST\",\"port\": \"$ADMIN_DB_PORT\", \"userName\": \"$ADMIN_DB_USERNAME\", \"password\": \"$ADMIN_DB_PASSWORD\", \"dbName\": \"$ADMIN_DB_NAME\"}"
+  curl -X POST -H "$headers" -d "$data" http://127.0.0.1:8888/init/initdb
 }
 
 function install_xray2() {
@@ -513,6 +527,7 @@ function install_xray2() {
   basic_optimization
   xray_install
 }
+
 menu() {
   echo -e "\t Xray 安装管理脚本 ${Red}${Font}"
   echo -e "—————————————— 安装向导 ——————————————"""
