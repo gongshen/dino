@@ -21,7 +21,7 @@ ERROR="${Red}[ERROR]${Font}"
 
 # 变量
 dino_version="v1.0.0"
-xray_version="v1.4.2"
+xray_version="v25.3.6"
 stat_dir="/usr/local/bin/stat"
 xray_admin_dir="/usr/local/bin/xray-admin"
 xray_admin_conf_dir="/usr/local/etc/xray-admin"
