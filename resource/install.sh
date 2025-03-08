@@ -272,34 +272,6 @@ function configure_nginx() {
   systemctl restart nginx
 }
 
-function xray_tmp_config_file_check_and_use() {
-  if [[ -s ${xray_conf_dir}/config_tmp.json ]]; then
-    mv -f ${xray_conf_dir}/config_tmp.json ${xray_conf_dir}/config.json
-  else
-    print_error "xray 配置文件修改异常"
-  fi
-}
-
-function modify_port() {
-  read -rp "请输入端口号(默认：443)：" PORT
-  [ -z "$PORT" ] && PORT="443"
-  if [[ $PORT -le 0 ]] || [[ $PORT -gt 65535 ]]; then
-    print_error "请输入 0-65535 之间的值"
-    exit 1
-  fi
-  port_exist_check $PORT
-  cat ${xray_conf_dir}/config.json | jq 'setpath(["inbounds",0,"port"];'${PORT}')' >${xray_conf_dir}/config_tmp.json
-  xray_tmp_config_file_check_and_use
-  judge "Xray 端口 修改"
-}
-
-function modify_listen() {
-  local_ipv4=$(curl -s4m8 ip.gs)
-  cat ${xray_conf_dir}/config.json | jq 'setpath(["inbounds",0,"listen"];"'${local_ipv4}'")' >${xray_conf_dir}/config_tmp.json
-  xray_tmp_config_file_check_and_use
-  judge "Xray 监听IP 修改"
-}
-
 function modify_UUID() {
   [ -z "$UUID" ] && UUID=$(cat /proc/sys/kernel/random/uuid)
   cat ${xray_conf_dir}/config.json | jq 'setpath(["inbounds",0,"settings","clients",0,"id"];"'${UUID}'")' >${xray_conf_dir}/config_tmp.json
@@ -307,13 +279,7 @@ function modify_UUID() {
   judge "Xray TCP UUID 修改"
 }
 
-#function configure_xray() {
-#  cd  ${xray_conf_dir} && rm -f config.json && wget -O config.json https://raw.githubusercontent.com/gongshen/xray/main/base/config.json
-#  modify_UUID
-#  modify_port
-#}
-#
-function configure_xray2() {
+function configure_xray() {
   cd  ${xray_conf_dir} && rm -f config.json && wget -O config.json https://raw.githubusercontent.com/gongshen/dino/main/resource/xrayConfig.json
   modify_UUID
   modify_port
@@ -325,10 +291,6 @@ function xray_install() {
   print_ok "安装 Xray"
   curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh | bash -s -- install --version ${xray_version}
   judge "Xray 安装"
-
-  # 用于生成 Xray 的导入链接
-#  echo $domain >$domain_tmp_dir/domain
-#  judge "域名记录"
 }
 
 function configure_web() {
@@ -367,15 +329,6 @@ function xray_uninstall() {
 }
 
 function restart_all() {
-  systemctl restart nginx
-  judge "Nginx 启动"
-  systemctl restart xray
-  judge "Xray 启动"
-  systemctl restart stat
-  judge "Stat 启动"
-}
-
-function restart_all_without_nginx() {
   systemctl restart xray
   judge "Xray 启动"
   systemctl restart stat
@@ -445,23 +398,6 @@ function install_stat() {
   judge "Stat 启动"
 }
 
-function install_xray1() {
-  is_root
-  system_check
-  dependency_install
-  basic_optimization
-  domain_check
-  port_exist_check 80
-  xray_install
-  configure_xray
-  nginx_install
-  configure_nginx
-  configure_web
-  install_stat
-  restart_all
-  basic_information
-}
-
 function install_mysql() {
   # 安装mysql8.0
   yum update -y
@@ -503,7 +439,7 @@ function install_admin() {
   judge "xray_admin 启动"
 }
 
-function install_admin_db() {
+function init_admin_db() {
   read -rp "请输入数据库类型(默认：mysql)：" ADMIN_DB_TYPE
   [ -z "$ADMIN_DB_TYPE" ] && ADMIN_DB_TYPE="mysql"
   read -rp "请输入数据库地址(默认：127.0.0.1)：" ADMIN_DB_HOST
@@ -521,7 +457,7 @@ function install_admin_db() {
   curl -X POST -H "$headers" -d "$data" http://127.0.0.1:8888/init/initdb
 }
 
-function install_xray2() {
+function install_xray() {
   is_root
   system_check
   dependency_install
@@ -532,18 +468,15 @@ function install_xray2() {
 menu() {
   echo -e "\t Xray 安装管理脚本 ${Red}${Font}"
   echo -e "—————————————— 安装向导 ——————————————"""
-#  echo -e "${Green}1.${Font}  安装 Xray (VLESS + TCP + TLS + Nginx)"
   echo -e "${Green}2.${Font}  安装 Xray"
   echo -e "${Green}3.${Font}  配置 Xray (VMESS + TCP[http伪装])"
-#  echo -e "${Green}3.${Font} 变更 端口"
-#  echo -e "${Green}4.${Font} 查看 实时访问日志"
-#  echo -e "${Green}5.${Font} 查看 实时错误日志"
-#  echo -e "${Green}6.${Font} 查看 Xray 配置链接"
+  echo -e "${Green}4.${Font} 查看 实时访问日志"
+  echo -e "${Green}5.${Font} 查看 实时错误日志"
+  echo -e "${Green}6.${Font} 查看 Xray 配置链接"
   echo -e "—————————————— 其他选项 ——————————————"
   echo -e "${Green}7.${Font} 安装 4 合 1 BBR、锐速安装脚本"
   echo -e "${Green}8.${Font} 卸载 Xray"
-#  echo -e "${Green}9.${Font} 更新 Xray-core"
-#  echo -e "${Green}10.${Font} 替换tmp"
+  echo -e "${Green}9.${Font} 更新 Xray-core"
   echo -e "${Green}11.${Font} 安装stat"
   echo -e "${Green}12.${Font} 安装管理端程序"
   echo -e "${Green}13.${Font} 安装mysql"
@@ -551,32 +484,25 @@ menu() {
   echo -e "${Green}40.${Font} 退出"
   read -rp "请输入数字：" menu_num
   case $menu_num in
-#  1)
-#    install_xray1
-#    ;;
   2)
-    install_xray2
+    install_xray
     ;;
   3)
-    configure_xray2
+    configure_xray
     ;;
-#  3)
-#    modify_port
-#    restart_all
-#    ;;
-#  4)
-#    tail -f $xray_access_log
-#    ;;
-#  5)
-#    tail -f $xray_error_log
-#    ;;
-#  6)
-#    if [[ -f $xray_conf_dir/config.json ]]; then
-#      basic_information
-#    else
-#      print_error "xray 配置文件不存在"
-#    fi
-#    ;;
+  4)
+    tail -f $xray_access_log
+    ;;
+  5)
+    tail -f $xray_error_log
+    ;;
+  6)
+    if [[ -f $xray_conf_dir/config.json ]]; then
+      basic_information
+    else
+      print_error "xray 配置文件不存在"
+    fi
+    ;;
   7)
     bbr_boost_sh
     ;;
@@ -588,9 +514,6 @@ menu() {
     bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" - install
     restart_all
     ;;
-  10)
-    xray_tmp_config_file_check_and_use
-    ;;
   11)
     install_stat
     ;;
@@ -600,8 +523,8 @@ menu() {
   13)
     install_mysql
     ;;
-  13)
-    install_admin_db
+  14)
+    init_admin_db
     ;;
   40)
     exit 0
