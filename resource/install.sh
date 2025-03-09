@@ -483,6 +483,7 @@ menu() {
   echo -e "${Green}12.${Font} 安装管理端程序"
   echo -e "${Green}13.${Font} 安装mysql"
   echo -e "${Green}14.${Font} 初始化管理端数据库"
+  echo -e "${Green}15.${Font} 配置iptables"
   echo -e "${Green}40.${Font} 退出"
   read -rp "请输入数字：" menu_num
   case $menu_num in
