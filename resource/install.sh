@@ -379,11 +379,13 @@ function bbr_boost_sh() {
 function config_iptables() {
   # 下载iptables文件
   wget -O iptables https://raw.githubusercontent.com/gongshen/dino/main/resource/iptables && mv -f iptables ${iptables_conf_dir}
-  read -rp "请输入ssh端口号(默认：22)：" SSHPORT
-  [ -z "$SSHPORT" ] && SSHPORT="22"
+  read -rp "请输入ssh端口号：" SSHPORT
   sed -i "s|__SSHPORT__|${SSHPORT}|" ${iptables_conf_dir}
+  read -rp "请输入管理端ip地址：" remoteIp
+  sed -i "s|__ADMINIP__|${remoteIp}|" ${iptables_conf_dir}
 
-  sed -i "s|__PORT__|${PORT}|" ${iptables_conf_dir}
+  iptables-restore < ${iptables_conf_dir}
+  systemctl restart iptables
 }
 
 function install_stat() {
@@ -525,6 +527,9 @@ menu() {
     ;;
   14)
     init_admin_db
+    ;;
+  15)
+    config_iptables
     ;;
   40)
     exit 0

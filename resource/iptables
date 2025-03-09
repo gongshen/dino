@@ -1,6 +1,14 @@
--A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
--A INPUT -p tcp -m tcp --dport __PORT__ -m conntrack --ctstate NEW -j ACCEPT
--A INPUT -p udp -m udp --dport __PORT__ -m conntrack --ctstate NEW -j ACCEPT
--A INPUT -p tcp -m state --state NEW -m tcp --dport __SSHPORT__ -j ACCEPT
--A INPUT -jREJECT --reject-with icmp-host-prohibited
--A FORWARD -jREJECT --reject-with icmp-host-prohibited
+*filter
+:INPUT DROP [0:0]
+:FORWARD DROP [0:0]
+:OUTPUT ACCEPT [0:0]
+
+-A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+-A INPUT -i lo -j ACCEPT
+
+-A INPUT -p tcp --dport __SSHPORT__ -j ACCEPT
+-A INPUT -p tcp -s __ADMINIP__ --dport 56611 -j ACCEPT
+-A INPUT -p tcp --dport 80 -j ACCEPT
+#-A INPUT -p tcp --dport 8888 -j ACCEPT
+
+COMMIT

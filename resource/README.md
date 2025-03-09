@@ -17,3 +17,4 @@ wget -N --no-check-certificate -q -O install.sh "https://raw.githubusercontent.c
 1. VMESS没有fallback的功能
 2. 使用Xray25.3.6版本
 3. mysql8.0版本
+4. ssh强制启用传统算法: ssh -o PubkeyAcceptedAlgorithms=+ssh-rsa
