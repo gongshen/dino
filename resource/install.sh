@@ -240,7 +240,7 @@ function domain_check() {
       sleep 2
       ;;
     *)
-      print_error "安装终止"
+      print_error ip"安装终止"
       exit 2
       ;;
     esac
@@ -379,10 +379,35 @@ function bbr_boost_sh() {
 function config_iptables() {
   # 下载iptables文件
   wget -O iptables https://raw.githubusercontent.com/gongshen/dino/main/resource/iptables && mv -f iptables ${iptables_conf_dir}
-  read -rp "请输入ssh端口号：" SSHPORT
+  # 循环提示用户输入SSH端口，直到输入非空值
+  while true; do
+    read -rp "请输入ssh端口号：" SSHPORT
+    if [[ -n "$SSHPORT" ]]; then
+      break
+    else
+      print_error "SSH端口不能为空，请重新输入"
+    fi
+  done
   sed -i "s|__SSHPORT__|${SSHPORT}|" ${iptables_conf_dir}
   read -rp "请输入管理端ip地址：" remoteIp
   sed -i "s|__ADMINIP__|${remoteIp}|" ${iptables_conf_dir}
+
+  # 提示用户是否是管理员
+  read -rp "Is Admin? (yes/y or no/n): " is_admin
+  
+  # 如果用户输入yes或y，请求用户输入ADMINPORT的值
+  if [[ "$is_admin" == "yes" || "$is_admin" == "y" ]]; then
+    while true; do
+      read -rp "请输入管理员端口号：" ADMINPORT
+      if [[ -n "$ADMINPORT" ]]; then
+        break
+      else
+        print_error "管理员端口不能为空，请重新输入"
+      fi
+    done
+    sed -i "s|###||" ${iptables_conf_dir}
+    sed -i "s|__ADMINPORT__|${ADMINPORT}|" ${iptables_conf_dir}
+  fi
 
   iptables-restore < ${iptables_conf_dir}
   systemctl restart iptables
