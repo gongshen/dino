@@ -2,5 +2,6 @@
 -A INPUT -p tcp -m tcp --dport __PORT__ -m conntrack --ctstate NEW -j ACCEPT
 -A INPUT -p udp -m udp --dport __PORT__ -m conntrack --ctstate NEW -j ACCEPT
 -A INPUT -p tcp -m state --state NEW -m tcp --dport __SSHPORT__ -j ACCEPT
+###-A INPUT -p tcp -m state --state NEW -m tcp --dport __ADMINPORT__ -j ACCEPT
 -A INPUT -jREJECT --reject-with icmp-host-prohibited
 -A FORWARD -jREJECT --reject-with icmp-host-prohibited
