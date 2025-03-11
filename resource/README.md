@@ -1,7 +1,7 @@
 # base
 > 安装xray需要的杂七杂八集合
 
-### xray版本：v1.4.2
+### xray版本：v25.3.6
 
 ### 额外信息
 - [增加pprof](https://github.com/XTLS/Xray-core/pull/1000)
@@ -15,5 +15,6 @@ wget -N --no-check-certificate -q -O install.sh "https://raw.githubusercontent.c
 
 ### 注意事项：
 1. VMESS没有fallback的功能
-2. 使用Xray1.4.2版本
+2. 使用Xray25.3.6版本
 3. mysql8.0版本
+4. ssh强制启用传统算法: ssh -o PubkeyAcceptedAlgorithms=+ssh-rsa
